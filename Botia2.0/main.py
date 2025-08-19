@@ -49,7 +49,9 @@ async def get_youtube_audio(query: str):
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(query, download=False)
-        return info['url']
+        if 'entries' in info and len(info['entries']) > 0:
+            info = info['entries'][0]
+        return info['url'] if 'url' in info else info['webpage_url']
 
 async def play_queue(ctx):
     global is_playing
@@ -173,7 +175,6 @@ async def stop(ctx):
 
 # ---------- INICIAR BOT ----------
 bot.run(TOKEN)
-
 
 
 

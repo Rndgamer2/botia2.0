@@ -63,3 +63,45 @@ Asegúrate de que FFmpeg esté instalado y la ruta correcta configurada en main.
 El bot reproduce canciones en orden de llegada (cola FIFO).
 
 Puedes combinar YouTube y archivos locales en la misma cola.
+
+# ARREGLO IMPORTANTE DEL BOT
+
+El mensaje clave era este:
+
+KeyError: 'url'
+
+
+Eso significa que tu código intentaba acceder a info['url'] dentro de la función get_youtube_audio, pero esa clave no existía en el diccionario que devolvía yt_dlp.
+
+¿Por qué ocurría?
+
+Cuando usas 'default_search': 'ytsearch' en yt_dlp, si la búsqueda devuelve varios resultados, yt_dlp no devuelve directamente un diccionario con 'url'.
+
+Devuelve un diccionario con una clave 'entries' que contiene la lista de resultados.
+
+Cada resultado dentro de 'entries' sí tiene la URL que necesitas ('url' o 'webpage_url').
+
+En tu código original hacías:
+
+info = ydl.extract_info(query, download=False)
+return info['url']
+
+
+Esto funciona si query es un enlace directo de YouTube.
+
+Pero si query era un término de búsqueda (por ejemplo: "Smack that"), info no tenía 'url', sino 'entries', y por eso saltaba el KeyError.
+
+Cómo lo arreglamos
+
+En mi versión corregida, agregamos:
+
+if 'entries' in info and len(info['entries']) > 0:
+    info = info['entries'][0]
+return info['url'] if 'url' in info else info['webpage_url']
+
+
+Esto hace dos cosas:
+
+Si info contiene 'entries' (una búsqueda), toma el primer resultado.
+
+Si no existe 'url', usamos 'webpage_url', que siempre apunta al video.
